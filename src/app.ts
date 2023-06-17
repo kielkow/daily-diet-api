@@ -4,6 +4,9 @@ import cookie from '@fastify/cookie'
 import { knex } from './database'
 import { logRequest } from './middleware/log-request'
 
+import { usersRoutes } from './routes/users'
+import { mealsRoutes } from './routes/meals'
+
 export const app = fastify()
 
 app.register(cookie)
@@ -17,3 +20,6 @@ app.get('/status', () => {
 app.get('/status-database', () => {
   return knex('sqlite_schema').select('*')
 })
+
+app.register(usersRoutes, { prefix: 'users' })
+app.register(mealsRoutes, { prefix: 'meals' })
