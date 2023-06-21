@@ -39,6 +39,26 @@ describe('MEALS ROUTES', () => {
     expect(statusCode).toEqual(201)
   })
 
+  it('should not be able create a meal with invalid body', async () => {
+    const createUserResponse = await request(app.server).post('/users').send({
+      name: 'jonh doe',
+    })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    const { statusCode } = await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'lunch',
+        description: '',
+        date: null,
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    expect(statusCode).toEqual(400)
+  })
+
   it('should not be able create a meal without session_id', async () => {
     const { statusCode } = await request(app.server).post('/meals').send({
       name: 'lunch',
