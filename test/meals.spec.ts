@@ -8,6 +8,8 @@ import { app } from '../src/app'
 describe('MEALS ROUTES', () => {
   beforeAll(async () => {
     await app.ready()
+
+    execSync('npm run knex migrate:rollback --all')
   })
 
   afterAll(async () => {
@@ -84,5 +86,41 @@ describe('MEALS ROUTES', () => {
       .set('Cookie', fakeCookie)
 
     expect(statusCode).toEqual(400)
+  })
+
+  it('should be able list user meals', async () => {
+    const createUserResponse = await request(app.server).post('/users').send({
+      name: 'jonh doe',
+    })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'lunch',
+        description: 'rice and chicken',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'dinner',
+        description: 'rice and steak',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    const response = await request(app.server)
+      .get('/meals')
+      .set('Cookie', sessionId)
+
+    expect(response.statusCode).toEqual(200)
+    expect(response.body).toBeTruthy()
+    expect(response.body.length).toEqual(2)
   })
 })
