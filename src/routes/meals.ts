@@ -5,6 +5,13 @@ import { FastifyInstance } from 'fastify'
 import { knex } from '../database'
 import { checkSessionIdExists } from '../middleware/check-session-id-exists'
 
+interface IMealQueryString {
+  name: string
+  description: string
+  date: string
+  respect_diet: boolean
+}
+
 export async function mealsRoutes(app: FastifyInstance) {
   app.post('/', { preHandler: [checkSessionIdExists] }, async (req, res) => {
     const mealBodySchema = z.object({
@@ -43,4 +50,80 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     res.status(201)
   })
+
+  app.get<{ Querystring: IMealQueryString }>(
+    '/',
+    { preHandler: [checkSessionIdExists] },
+    async (req, res) => {
+      const user = await knex('users')
+        .select('*')
+        .where({ session_id: req.cookies.sessionId })
+        .first()
+
+      if (!user) {
+        return res.status(400).send('user with this session_id not found')
+      }
+
+      const options = {
+        ...req.query,
+        user_id: user.id,
+      }
+
+      const meals = await knex('meals').select('*').where(options)
+
+      res.send(meals)
+    },
+  )
+
+  // app.put('/:id', { preHandler: [checkSessionIdExists] }, async (req, res) => {
+  //   const paramSchema = z.object({
+  //     id: z.string().uuid(),
+  //   })
+
+  //   let id: string
+  //   try {
+  //     const params = paramSchema.parse(req.params)
+  //     id = params.id
+  //   } catch (error) {
+  //     return res.status(400).send(JSON.parse(String(error)))
+  //   }
+
+  //   const mealBodySchema = z.object({
+  //     name: z.string().optional(),
+  //     description: z.string().optional(),
+  //     date: z.string().optional(),
+  //     respect_diet: z.boolean().optional(),
+  //   })
+
+  //   let mealBody
+  //   try {
+  //     mealBody = mealBodySchema.parse(req.body)
+  //   } catch (error) {
+  //     return res.status(400).send(JSON.parse(String(error)))
+  //   }
+
+  //   console.log(id, mealBody)
+
+  //   // const { name, description, date, respect_diet: respectDiet } = mealBody
+
+  //   // const user = await knex('users')
+  //   //   .select('*')
+  //   //   .where({ session_id: req.cookies.sessionId })
+  //   //   .first()
+
+  //   // if (!user) {
+  //   //   return res.status(400).send('user with this session_id not found')
+  //   // }
+
+  //   // await knex('meals').update({
+  //   //   id: randomUUID(),
+  //   //   user_id: user.id,
+  //   //   name,
+  //   //   description,
+  //   //   date,
+  //   //   respect_diet: respectDiet,
+  //   // })
+
+  //   res.status(201)
+  // })
 }
