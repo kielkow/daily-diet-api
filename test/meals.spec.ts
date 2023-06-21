@@ -37,4 +37,15 @@ describe('MEALS ROUTES', () => {
 
     expect(statusCode).toEqual(201)
   })
+
+  it('should not be able create a meal without session_id', async () => {
+    const { statusCode } = await request(app.server).post('/meals').send({
+      name: 'lunch',
+      description: 'rice and chicken',
+      date: new Date().toISOString(),
+      respect_diet: true,
+    })
+
+    expect(statusCode).toEqual(401)
+  })
 })
