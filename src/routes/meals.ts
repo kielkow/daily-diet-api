@@ -75,6 +75,35 @@ export async function mealsRoutes(app: FastifyInstance) {
     },
   )
 
+  app.get('/:id', { preHandler: [checkSessionIdExists] }, async (req, res) => {
+    const paramSchema = z.object({ id: z.string().uuid() })
+
+    let id: string
+    try {
+      const params = paramSchema.parse(req.params)
+      id = params.id
+    } catch (error) {
+      return res.status(400).send(JSON.parse(String(error)))
+    }
+
+    const user = await knex('users')
+      .select('*')
+      .where({ session_id: req.cookies.sessionId })
+      .first()
+
+    if (!user) {
+      return res.status(400).send('user with this session_id not found')
+    }
+
+    const options = { id, user_id: user.id }
+
+    const meal = await knex('meals').select('*').where(options).first()
+
+    if (!meal) return res.status(400).send('Meal not found')
+
+    res.send(meal)
+  })
+
   // app.put('/:id', { preHandler: [checkSessionIdExists] }, async (req, res) => {
   //   const paramSchema = z.object({
   //     id: z.string().uuid(),
