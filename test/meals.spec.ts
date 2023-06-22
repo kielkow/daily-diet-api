@@ -8,8 +8,6 @@ import { app } from '../src/app'
 describe('MEALS ROUTES', () => {
   beforeAll(async () => {
     await app.ready()
-
-    execSync('npm run knex migrate:rollback --all')
   })
 
   afterAll(async () => {
@@ -122,5 +120,15 @@ describe('MEALS ROUTES', () => {
     expect(response.statusCode).toEqual(200)
     expect(response.body).toBeTruthy()
     expect(response.body.length).toEqual(2)
+  })
+
+  it('should not be able list user meals with invalid session_id', async () => {
+    const fakeCookie = [`sessionId=${randomUUID()}; Max-Age=604800000; Path=/`]
+
+    const response = await request(app.server)
+      .get('/meals')
+      .set('Cookie', fakeCookie)
+
+    expect(response.statusCode).toEqual(400)
   })
 })
