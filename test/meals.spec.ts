@@ -163,4 +163,18 @@ describe('MEALS ROUTES', () => {
     expect(response.body).toBeTruthy()
     expect(response.body.id).toEqual(mealID)
   })
+
+  it('should not be able get an user meal by invalid ID', async () => {
+    const createUserResponse = await request(app.server).post('/users').send({
+      name: 'jonh doe',
+    })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    const response = await request(app.server)
+      .get(`/meals/${randomUUID()}`)
+      .set('Cookie', sessionId)
+
+    expect(response.statusCode).toEqual(400)
+  })
 })
