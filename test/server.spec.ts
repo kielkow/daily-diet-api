@@ -7,8 +7,6 @@ import { app } from '../src/app'
 describe('SERVER ROUTES', () => {
   beforeAll(async () => {
     await app.ready()
-
-    execSync('npm run knex migrate:rollback --all')
   })
 
   afterAll(async () => {
