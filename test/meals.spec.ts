@@ -227,4 +227,34 @@ describe('MEALS ROUTES', () => {
       }),
     )
   })
+
+  it('should not be able update a meal by invalid ID', async () => {
+    const createUserResponse = await request(app.server)
+      .post('/users')
+      .send({ name: 'jonh doe' })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'lunch',
+        description: 'rice and chicken',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    const updateMealResponse = await request(app.server)
+      .put(`/meals/${randomUUID()}`)
+      .send({
+        name: 'lunch updated',
+        description: 'rice, chicken and fries',
+        date: new Date().toISOString(),
+        respect_diet: false,
+      })
+      .set('Cookie', sessionId)
+
+    expect(updateMealResponse.statusCode).toEqual(400)
+  })
 })
