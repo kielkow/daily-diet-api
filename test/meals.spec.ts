@@ -177,4 +177,54 @@ describe('MEALS ROUTES', () => {
 
     expect(response.statusCode).toEqual(400)
   })
+
+  it('should be able update a meal', async () => {
+    const createUserResponse = await request(app.server)
+      .post('/users')
+      .send({ name: 'jonh doe' })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'lunch',
+        description: 'rice and chicken',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    const listMealsResponse = await request(app.server)
+      .get('/meals')
+      .set('Cookie', sessionId)
+
+    const mealID = listMealsResponse.body[0].id
+
+    const updatedDate = new Date().toISOString()
+
+    const updateMealResponse = await request(app.server)
+      .put(`/meals/${mealID}`)
+      .send({
+        name: 'lunch updated',
+        description: 'rice, chicken and fries',
+        date: updatedDate,
+        respect_diet: false,
+      })
+      .set('Cookie', sessionId)
+
+    const mealUpdated = await request(app.server)
+      .get(`/meals/${mealID}`)
+      .set('Cookie', sessionId)
+
+    expect(updateMealResponse.statusCode).toEqual(204)
+    expect(mealUpdated.body).toEqual(
+      expect.objectContaining({
+        name: 'lunch updated',
+        description: 'rice, chicken and fries',
+        date: updatedDate,
+        respect_diet: 0,
+      }),
+    )
+  })
 })
