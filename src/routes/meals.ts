@@ -104,55 +104,47 @@ export async function mealsRoutes(app: FastifyInstance) {
     res.send(meal)
   })
 
-  // app.put('/:id', { preHandler: [checkSessionIdExists] }, async (req, res) => {
-  //   const paramSchema = z.object({
-  //     id: z.string().uuid(),
-  //   })
+  app.put('/:id', { preHandler: [checkSessionIdExists] }, async (req, res) => {
+    let id, mealBody
 
-  //   let id: string
-  //   try {
-  //     const params = paramSchema.parse(req.params)
-  //     id = params.id
-  //   } catch (error) {
-  //     return res.status(400).send(JSON.parse(String(error)))
-  //   }
+    const paramSchema = z.object({
+      id: z.string().uuid(),
+    })
 
-  //   const mealBodySchema = z.object({
-  //     name: z.string().optional(),
-  //     description: z.string().optional(),
-  //     date: z.string().optional(),
-  //     respect_diet: z.boolean().optional(),
-  //   })
+    const mealBodySchema = z.object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      date: z.string().optional(),
+      respect_diet: z.boolean().optional(),
+    })
 
-  //   let mealBody
-  //   try {
-  //     mealBody = mealBodySchema.parse(req.body)
-  //   } catch (error) {
-  //     return res.status(400).send(JSON.parse(String(error)))
-  //   }
+    try {
+      const params = paramSchema.parse(req.params)
+      id = params.id
 
-  //   console.log(id, mealBody)
+      mealBody = mealBodySchema.parse(req.body)
+    } catch (error) {
+      return res.status(400).send(JSON.parse(String(error)))
+    }
 
-  //   // const { name, description, date, respect_diet: respectDiet } = mealBody
+    const user = await knex('users')
+      .select('*')
+      .where({ session_id: req.cookies.sessionId })
+      .first()
+    if (!user) {
+      return res.status(400).send('user with this session_id not found')
+    }
 
-  //   // const user = await knex('users')
-  //   //   .select('*')
-  //   //   .where({ session_id: req.cookies.sessionId })
-  //   //   .first()
+    const meal = await knex('meals')
+      .select('*')
+      .where({ id, user_id: user.id })
+      .first()
+    if (!meal) {
+      return res.status(400).send('meal not found for this user')
+    }
 
-  //   // if (!user) {
-  //   //   return res.status(400).send('user with this session_id not found')
-  //   // }
+    await knex('meals').where({ id }).update(mealBody)
 
-  //   // await knex('meals').update({
-  //   //   id: randomUUID(),
-  //   //   user_id: user.id,
-  //   //   name,
-  //   //   description,
-  //   //   date,
-  //   //   respect_diet: respectDiet,
-  //   // })
-
-  //   res.status(201)
-  // })
+    res.status(204)
+  })
 }
