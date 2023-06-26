@@ -287,4 +287,28 @@ describe('MEALS ROUTES', () => {
 
     expect(response.statusCode).toEqual(204)
   })
+
+  it('should not be able delete a meal by invalid ID', async () => {
+    const createUserResponse = await request(app.server).post('/users').send({
+      name: 'jonh doe',
+    })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'lunch',
+        description: 'rice and chicken',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    const response = await request(app.server)
+      .delete(`/meals/${randomUUID()}`)
+      .set('Cookie', sessionId)
+
+    expect(response.statusCode).toEqual(400)
+  })
 })
