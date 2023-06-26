@@ -173,7 +173,9 @@ export async function mealsRoutes(app: FastifyInstance) {
 
       const options = { id, user_id: user.id }
 
-      await knex('meals').delete().where(options)
+      const meal = await knex('meals').delete().where(options)
+
+      if (!meal) return res.status(400).send('Meal not found')
 
       res.status(204)
     },
