@@ -311,4 +311,64 @@ describe('MEALS ROUTES', () => {
 
     expect(response.statusCode).toEqual(400)
   })
+
+  it('should be able get user meals summary', async () => {
+    const createUserResponse = await request(app.server).post('/users').send({
+      name: 'jonh doe',
+    })
+
+    const sessionId = createUserResponse.get('Set-Cookie')
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'breakfast',
+        description: 'burger and fries',
+        date: new Date().toISOString(),
+        respect_diet: false,
+      })
+      .set('Cookie', sessionId)
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'lunch',
+        description: 'rice and steak',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    await request(app.server)
+      .post('/meals')
+      .send({
+        name: 'dinner',
+        description: 'rice and chicken',
+        date: new Date().toISOString(),
+        respect_diet: true,
+      })
+      .set('Cookie', sessionId)
+
+    const { body: meals } = await request(app.server)
+      .get('/meals')
+      .set('Cookie', sessionId)
+
+    // eslint-disable-next-line no-unused-vars
+    const [_, lunch, dinner] = meals
+
+    const response = await request(app.server)
+      .get('/meals/summary')
+      .set('Cookie', sessionId)
+
+    expect(response.statusCode).toEqual(200)
+    expect(response.body).toBeTruthy()
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        totalMeals: 3,
+        totalMealsRespectDiet: 2,
+        totalMealsNotRespectDiet: 1,
+        betterSequenceOfMeals: expect.arrayContaining([lunch, dinner]),
+      }),
+    )
+  })
 })
