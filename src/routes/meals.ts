@@ -180,4 +180,51 @@ export async function mealsRoutes(app: FastifyInstance) {
       res.status(204)
     },
   )
+
+  app.get<{ Querystring: IMealQueryString }>(
+    '/summary',
+    { preHandler: [checkSessionIdExists] },
+    async (req, res) => {
+      const user = await knex('users')
+        .select('*')
+        .where({ session_id: req.cookies.sessionId })
+        .first()
+
+      if (!user) {
+        return res.status(400).send('user with this session_id not found')
+      }
+
+      const [
+        totalMeals,
+        totalMealsRespectDiet,
+        totalMealsNotRespectDiet,
+        betterSequenceOfMeals,
+      ] = await Promise.all([
+        (await knex('meals').select('*').where({ user_id: user.id })).length,
+        (
+          await knex('meals')
+            .select('*')
+            .where({ user_id: user.id, respect_diet: true })
+        ).length,
+        (
+          await knex('meals')
+            .select('*')
+            .where({ user_id: user.id, respect_diet: false })
+        ).length,
+        (
+          await knex('meals')
+            .select('*')
+            .where({ user_id: user.id, respect_diet: true })
+            .orderBy('created_at', 'desc')
+        ).splice(0, 30),
+      ])
+
+      res.send({
+        totalMeals,
+        totalMealsRespectDiet,
+        totalMealsNotRespectDiet,
+        betterSequenceOfMeals,
+      })
+    },
+  )
 }
